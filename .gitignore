@@ -1,0 +1,10 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+# trained weights can be large; remove this line if you want to upload them
+*.pt
+# the Kaggle handwriting images (large, and not yours to redistribute)
+data/english-handwritten-characters-dataset/
+*.zip
