@@ -14,12 +14,36 @@ from PIL import Image, ImageChops, ImageDraw
 
 
 class HandwritingRenderer:
-    def __init__(self, dataset_dir, csv_name="english.csv",
-                 char_height=64, seed=None):
+    def __init__(self, dataset_dir=None, csv_name="english.csv",
+                 char_height=64, seed=None, bank=None):
+        """Load from the raw Kaggle folder (dataset_dir) OR from a compact
+        glyph bank file made by build_glyph_bank.py (bank)."""
         self.char_height = char_height
         self.rng = random.Random(seed)
         self.samples = {}  # label -> list of grayscale PIL images
-        self._load(dataset_dir, csv_name)
+        if bank:
+            self._load_bank(bank)
+        elif dataset_dir:
+            self._load(dataset_dir, csv_name)
+        else:
+            raise ValueError("Give either dataset_dir or bank.")
+
+    # ------------------------------------------------------------ glyph bank
+    def save_bank(self, path):
+        """Save the cleaned-up character images into one small .npz file."""
+        arrays = {}
+        for label, imgs in self.samples.items():
+            for i, img in enumerate(imgs):
+                arrays[f"{label}_{i}"] = np.asarray(img, dtype=np.uint8)
+        np.savez_compressed(path, **arrays)
+
+    def _load_bank(self, path):
+        with np.load(path) as bank:
+            for key in bank.files:
+                label = key.rsplit("_", 1)[0]
+                self.samples.setdefault(label, []).append(
+                    Image.fromarray(bank[key]))
+        self.char_height = next(iter(next(iter(self.samples.values())))).height
 
     # ------------------------------------------------------------------ load
     def _load(self, dataset_dir, csv_name):
